@@ -34,7 +34,17 @@ class FaceRecognitionService:
     def ping(self):
         """Check if service is healthy"""
         try:
-            DeepFace.find(img_path="test.jpg", db_path="./db")
+            # Create a temporary test image
+            test_img = Image.new('RGB', (100, 100), color='white')
+            test_path = os.path.join(self.storage_path, 'test_health_check.jpg')
+            test_img.save(test_path)
+            
+            # Try a basic face detection
+            result = DeepFace.analyze(img_path=test_path, actions=['emotion'])
+            
+            # Clean up
+            os.remove(test_path)
+            
             return True
         except Exception as e:
             self.logger.error(f"Service health check failed: {str(e)}")
@@ -46,7 +56,18 @@ class FaceRecognitionService:
         result = None
         
         try:
+            # Check if timeout is exceeded
+            if time.time() - start_time > self.timeout:
+                raise TimeoutError(f"Operation timed out after {self.timeout} seconds")
+            
             result = func(*args, **kwargs)
+            
+            # Check timeout again after operation
+            if time.time() - start_time > self.timeout:
+                raise TimeoutError(f"Operation took too long: {time.time() - start_time:.2f} seconds")
+        except TimeoutError as te:
+            self.logger.error(f"Timeout error: {str(te)}")
+            raise
         except Exception as e:
             self.logger.error(f"Processing failed: {str(e)}")
             raise
@@ -147,9 +168,39 @@ class FaceRecognitionService:
     def _register_face(self, user_id, image_data, metadata):
         """Internal method to register face"""
         try:
-            # Convert base64 to image
+            # Convert base64 image to PIL Image
             image_bytes = base64.b64decode(image_data)
             image = Image.open(io.BytesIO(image_bytes))
+            
+            # Save image to storage
+            image_path = os.path.join(self.storage_path, 'images', f'{user_id}.jpg')
+            image.save(image_path)
+            
+            # Extract face embeddings
+            embedding = DeepFace.represent(
+                img_path=image_path,
+                model_name='Facenet',
+                enforce_detection=False
+            )
+            
+            # Store embeddings with metadata
+            self.face_embeddings[user_id] = {
+                'embedding': embedding,
+                'metadata': metadata,
+                'last_updated': datetime.now().isoformat()
+            }
+            
+            # Save to disk
+            self._save_embeddings()
+            
+            return {
+                'status': 'success',
+                'message': 'Face registered successfully',
+                'user_id': user_id
+            }
+        except Exception as e:
+            self.logger.error(f"Error in face registration for user {user_id}: {str(e)}")
+            raise
             
             # Save image
             image_path = os.path.join(self.storage_path, 'images', f"{user_id}.jpg")
@@ -162,11 +213,9 @@ class FaceRecognitionService:
             self.face_embeddings[user_id] = {
                 'embedding': embedding,
                 'metadata': metadata or {},
-                'registered_at': datetime.now().isoformat()
-                "embedding": embedding,
-                "metadata": metadata or {},
-                "last_updated": datetime.now().isoformat(),
-                "image_path": image_path
+                'registered_at': datetime.now().isoformat(),
+                'last_updated': datetime.now().isoformat(),
+                'image_path': image_path
             }
             
             self.save_embeddings()
