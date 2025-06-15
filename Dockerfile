@@ -7,4 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "app.py"]
+# Use Gunicorn for production
+CMD gunicorn -w 4 -b :$PORT app:app
