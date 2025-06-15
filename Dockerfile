@@ -6,9 +6,45 @@ WORKDIR /app
 # Install minimal system dependencies
 RUN apk add --no-cache \
     build-base \
-    libglib2 \
+    glib \
     libxrender \
-    libxext
+    libxext \
+    libsm \
+    libx11 \
+    libxcb \
+    libxau \
+    libxdmcp \
+    libxfixes \
+    libxext \
+    libxi \
+    libxrender \
+    libxrandr \
+    libxinerama \
+    libxcursor \
+    libxcomposite \
+    libxdamage \
+    libxshmfence \
+    libxss \
+    libxtst \
+    libx11-dev \
+    libxext-dev \
+    libxrender-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxrandr-dev \
+    libxcomposite-dev \
+    libxdamage-dev \
+    libxfixes-dev \
+    libxi-dev \
+    libxss-dev \
+    libxtst-dev \
+    libxshmfence-dev \
+    libxcb-dev \
+    libxau-dev \
+    libxdmcp-dev \
+    glib-dev \
+    pkgconfig \
+    && rm -rf /var/cache/apk/*
 
 # Install Python dependencies
 COPY requirements.txt .
