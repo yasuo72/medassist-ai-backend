@@ -1,57 +1,23 @@
 # Stage 1: Build dependencies
-FROM python:3.10-alpine as builder
+FROM python:3.10-slim as builder
 
 WORKDIR /app
 
 # Install minimal system dependencies
-RUN apk add --no-cache \
-    build-base \
-    glib \
-    libxrender \
-    libxext \
-    libsm \
-    libx11 \
-    libxcb \
-    libxau \
-    libxdmcp \
-    libxfixes \
-    libxext \
-    libxi \
-    libxrender \
-    libxrandr \
-    libxinerama \
-    libxcursor \
-    libxcomposite \
-    libxdamage \
-    libxshmfence \
-    libxss \
-    libxtst \
-    libx11-dev \
-    libxext-dev \
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
     libxrender-dev \
-    libxinerama-dev \
-    libxcursor-dev \
-    libxrandr-dev \
-    libxcomposite-dev \
-    libxdamage-dev \
-    libxfixes-dev \
-    libxi-dev \
-    libxss-dev \
-    libxtst-dev \
-    libxshmfence-dev \
-    libxcb-dev \
-    libxau-dev \
-    libxdmcp-dev \
-    glib-dev \
-    pkgconfig \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --compile --no-binary :all: -r requirements.txt
 
 # Stage 2: Final image
-FROM python:3.10-alpine
+FROM python:3.10-slim
 
 WORKDIR /app
 
